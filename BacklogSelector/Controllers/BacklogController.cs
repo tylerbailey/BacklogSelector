@@ -1,6 +1,8 @@
 ﻿using BacklogBrowser.Services;
+using BacklogSelector.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using System;
 using System.Net;
 using System.Threading.Tasks;
@@ -29,19 +31,20 @@ namespace BacklogBrowser.Controllers
         [Route("getgame")]
         public async Task<string> SelectBacklogGame([FromBody] string vanityUrl)
         {
-            string response;
+            JSONResponse response;
 
             try
             {
                 var steamId = await _apiService.GetSteamId(vanityUrl);
-                response = await _apiService.GetSelectedGame(steamId);
+                response = new JSONResponse(true, await _apiService.GetSelectedGame(steamId));
             }          
             catch(Exception ex)
             {
                 //logging
-                response = ex.Message;
+                response = new JSONResponse(false, ex.Message);
             }
-            return response;
+            string JSONResponse = JsonConvert.SerializeObject(response);
+            return JSONResponse;
         }
 
 

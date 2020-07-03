@@ -1,10 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using BacklogBrowser.Models;
+using System.Threading.Tasks;
 
 namespace BacklogBrowser.Services
 {
     public interface ISteamAPIService
     {
         Task<string> GetSteamId(string vanityURL);
-        Task<string> GetSelectedGame(string steamId);
+        Task<Game> GetSelectedGame(string steamId);
     }
 }

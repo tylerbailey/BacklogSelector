@@ -1,10 +1,8 @@
 using BacklogBrowser.Exceptions;
-using BacklogBrowser.Models;
 using BacklogBrowser.Services;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using Moq.Protected;
-using Newtonsoft.Json;
 using System;
 using System.Net;
 using System.Net.Http;
@@ -44,11 +42,10 @@ namespace BacklogBrowser.Tests
         {
             var config = new Mock<IConfiguration>();
             config.SetupGet(conf => conf["AppSettings:APIKey"]).Returns("testkey");
-            var httpClientFactory = SetupHttpClientFactory("{\"response\": {\"game_count\": 1,\"games\":[{\"appid\": 70,\"name\": \"Half-Life\",\"playtime_forever\": 96,\"img_icon_url\": \"95be6d131fc61f145797317ca437c9765f24b41c\",\"img_logo_url\": \"6bd76ff700a8c7a5460fbae3cf60cb930279897d\",\"has_community_visible_stats\": true,\"playtime_windows_forever\": 1,\"playtime_mac_forever\": 0,\"playtime_linux_forever\": 0}]}}");
+            var httpClientFactory = SetupHttpClientFactory("{\"response\": {\"game_count\": 1,\"games\":[{\"appid\": 70,\"name\": \"Half-Life\",\"playtime_forever\": 0,\"img_icon_url\": \"95be6d131fc61f145797317ca437c9765f24b41c\",\"img_logo_url\": \"6bd76ff700a8c7a5460fbae3cf60cb930279897d\",\"has_community_visible_stats\": true,\"playtime_windows_forever\": 0,\"playtime_mac_forever\": 0,\"playtime_linux_forever\": 0}]}}");
            
             ISteamAPIService apiService = new SteamAPIService(config.Object, httpClientFactory);
-            var gameJSON = await apiService.GetSelectedGame("steamId");
-            var game = JsonConvert.DeserializeObject<Game>(gameJSON);
+            var game = await apiService.GetSelectedGame("steamId");
             Assert.True(game.Name.Equals("Half-Life"));
         }
 
@@ -97,17 +94,16 @@ namespace BacklogBrowser.Tests
             await Assert.ThrowsAsync<SteamGamesException>(async () => await apiService.GetSelectedGame("steamId"));
         }
 
-        private IHttpClientFactory SetupHttpClientFactory(string responeContent)
+        private IHttpClientFactory SetupHttpClientFactory(string responseContent)
         {
-          
             var response = new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(responeContent)
+                Content = new StringContent(responseContent)
 
             };
 
-            var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+            var handlerMock = new Mock<HttpMessageHandler>();
             handlerMock.Protected()
                 .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -120,8 +116,7 @@ namespace BacklogBrowser.Tests
             var httpClient = new HttpClient(handlerMock.Object)
             {
                 BaseAddress = new Uri("http://localhost/address")
-            };
-
+            };           
             var httpClientFactory = new Mock<IHttpClientFactory>();
             httpClientFactory.Setup(client => client.CreateClient(It.IsAny<string>())).Returns(httpClient);
             return httpClientFactory.Object;
